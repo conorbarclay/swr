@@ -31,6 +31,7 @@ describe('useSWRPages', () => {
       >(
         'page-2',
         ({ offset, withSWR }) => {
+          // eslint-disable-next-line react-hooks/rules-of-hooks
           const { data } = withSWR(useSWR(String(offset || 0), v => v))
           return 'page ' + data + ', '
         },
