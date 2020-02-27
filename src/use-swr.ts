@@ -526,6 +526,40 @@ function useSWR<Data = any, Error = any>(
     revalidate
   ])
 
+  // define returned state
+  // can be memorized since the state is a ref
+  const memoizedState = useMemo(() => {
+    const state = { revalidate, mutate: boundMutate } as responseInterface<
+      Data,
+      Error
+    >
+    Object.defineProperties(state, {
+      error: {
+        // `key` might be changed in the upcoming hook re-render,
+        // but the previous state will stay
+        // so we need to match the latest key and data (fallback to `initialData`)
+        get: function() {
+          stateDependencies.current.error = true
+          return stateRef.current.error
+        }
+      },
+      data: {
+        get: function() {
+          stateDependencies.current.data = true
+          return stateRef.current.data
+        }
+      },
+      isValidating: {
+        get: function() {
+          stateDependencies.current.isValidating = true
+          return stateRef.current.isValidating
+        }
+      }
+    })
+
+    return state
+  }, [revalidate])
+
   // suspense
   if (config.suspense) {
     if (IS_SERVER)
@@ -577,39 +611,7 @@ function useSWR<Data = any, Error = any>(
     }
   }
 
-  // define returned state
-  // can be memorized since the state is a ref
-  return useMemo(() => {
-    const state = { revalidate, mutate: boundMutate } as responseInterface<
-      Data,
-      Error
-    >
-    Object.defineProperties(state, {
-      error: {
-        // `key` might be changed in the upcoming hook re-render,
-        // but the previous state will stay
-        // so we need to match the latest key and data (fallback to `initialData`)
-        get: function() {
-          stateDependencies.current.error = true
-          return stateRef.current.error
-        }
-      },
-      data: {
-        get: function() {
-          stateDependencies.current.data = true
-          return stateRef.current.data
-        }
-      },
-      isValidating: {
-        get: function() {
-          stateDependencies.current.isValidating = true
-          return stateRef.current.isValidating
-        }
-      }
-    })
-
-    return state
-  }, [revalidate])
+  return memoizedState
 }
 
 const SWRConfig = SWRConfigContext.Provider
